@@ -46,29 +46,26 @@ Right now, this kind of helpful, honest, always-there money-twin mostly only exi
 
 You can't build a twin all at once — you build it piece by piece, like building blocks. Here's the order, and why each one comes before the next.
 
-**1. Build the twin's "house" first — the plumbing nobody sees**
-Before the twin can do anything, it needs a place to live: somewhere to remember things (its memory boxes), and a way for you to even open the app and say "hi, it's me." No magic yet — just the foundation.
+**1. Build the twin's "house" first — the plumbing nobody sees** — 🚧 half-done
+Before the twin can do anything, it needs a place to live: somewhere to remember things (its memory boxes), and a way for you to even open the app and say "hi, it's me." The memory boxes are built and tested for real (they genuinely remember things now) — but the "say hi, it's me" part (login) isn't connected yet, so the twin still can't tell who it's talking to.
 
-**2. Give the twin its crystal ball**
-Next, we teach the twin to do the "what if" math — if you save this much, here's what happens later. This is the twin's core superpower, so it comes early, before anything fancier.
+**2. Give the twin its crystal ball** — ✅ done
+The twin can now do the "what if" math for real — if you save this much, here's what happens later.
 
-**3. Let you actually *see* the crystal ball**
-A crystal ball nobody can look into is useless — so next we build the screen where you see your savings goal, and watch the number change when you try different "what ifs."
+**3. Let you actually *see* the crystal ball** — ✅ done
+There's a real screen now where you see your savings goal, and watch the number change when you try different "what ifs."
 
-**4. Give the twin a voice**
-Now we let you *talk* to the twin instead of just clicking buttons — it listens, understands, and uses the crystal ball from step 2 to answer you in words, not just numbers.
+**4. Give the twin a voice** — ✅ done
+You can now *talk* to the twin instead of just clicking buttons — it listens, understands, and really does use the crystal ball from step 2 to answer you (we checked: it's not just making up numbers that sound right).
 
-**5. Teach the twin to know you, honestly**
-Once the twin can talk, we teach it to look at what you've *actually done before* — so it can gently coach you, instead of just answering questions like a robot.
+**5. Teach the twin to know you, honestly** — ✅ done
+The twin can now look at a made-up example of what someone's *actually done before* and gently coach them — real money history isn't connected yet, but the "look and coach honestly" part genuinely works.
 
-**6. Teach the twin to notice things on its own**
-Now that the twin is smart and honest, we teach it to tap you on the shoulder at the right moment — instead of waiting for you to ask.
+**6. Teach the twin to notice things on its own** — ⬜ not started
 
-**7. Give the grown-ups (the bank helpers) their own window**
-The bank's human helpers get their own screen to check in on kids who might need extra help — so a real person is always backing up the twin.
+**7. Give the grown-ups (the bank helpers) their own window** — ⬜ not started
 
-**8. Polish, so it feels like magic and not homework**
-Last, we make everything smoother and prettier, practice showing it off, and add fun extras — like letting the twin talk out loud — if there's time left.
+**8. Polish, so it feels like magic and not homework** — ⬜ not started
 
 ### Why this order and not some other order?
 Each step needs the one before it to already exist — you can't teach the twin to notice things (step 6) before it can talk (step 4), and it can't talk usefully before it has a crystal ball (step 2) to talk about. We always build the *thing itself* before the *shiny bits around it*.

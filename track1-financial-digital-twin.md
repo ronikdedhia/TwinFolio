@@ -201,7 +201,13 @@ Indicative only — to be refined once actual sandbox/cloud pricing and licensin
 
 # Prototype Performance report/Benchmarking
 
-**[TBD post-build]** — to include: simulation-engine response latency, conversation-layer fallback/failure rate, revealed-preference model backtest accuracy against known behavioral events. Populate during Sprint 3–4.
+**Partial — real results so far, full report still pending:**
+- Agentic tool-calling verified accurate: asking the agent "how much do I need to save monthly to hit my goal?" returned the exact same figure (₹6,001.10) as calling the deterministic calculation directly — confirms the agent relays real computed values rather than plausible-sounding hallucinated ones.
+- Risk/bias model tested across 4 synthetic behavioral presets — correctly differentiated conservative/moderate/aggressive profiles and, importantly, returned zero false-positive bias flags on the clean "disciplined investor" case. One labeling-accuracy bug found and fixed via prompt tuning during testing (see TESTING.md).
+- Data layer (Turso, MongoDB, Qdrant) round-trip correctness confirmed against the real cloud services; Qdrant semantic search confirmed returning genuinely relevant results (not just exact-string matches) with verified cross-user data isolation.
+- **Still missing:** simulation-engine response latency numbers, conversation-layer fallback/failure rate under load — to be populated once the app is under more realistic traffic.
+
+Full detail and reproducible curl commands: see `TESTING.md` in the repo.
 
 ---
 
@@ -215,6 +221,7 @@ Indicative only — to be refined once actual sandbox/cloud pricing and licensin
   - Sprint 1–2 (Wk 1–4): synthetic behavioral dataset, simulation engine v1, avatar tech-spike, revealed-preference model v1, goal dashboard + sandbox UI.
   - Sprint 3 (Wk 5–6): real sandbox data integration (post Aug 4 access), micro-moment trigger engine, bias-coaching scripts tuned, RM dashboard, compliance console v1.
   - Sprint 4 (Wk 7–8): voice interface (stretch), analytics dashboard, security/audit hardening, demo-day polish.
+- **Actual progress against this plan:** Sprint 1–2 scope is essentially complete (simulation engine, goal dashboard, agentic conversation layer, and risk model are all built and verified with real API calls — ahead of a pure "v1", closer to a working v1.5). Part of Sprint 3 is also done early (the data layer itself), but real sandbox data, the micro-moment trigger engine, the RM dashboard, and auth/persistence wiring into the live routes are all still outstanding — currently the app runs stateless with no login.
 - **Future development beyond hackathon scope:** extend the twin to joint/family financial planning (shared goals across household accounts); add a "what would a financial advisor say" human-escalation blend for high-net-worth edge cases the model flags as low-confidence.
 
 ---

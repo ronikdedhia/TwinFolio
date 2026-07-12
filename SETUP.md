@@ -2,6 +2,8 @@
 
 Stack locked in: **Groq** (LLM), **local free embeddings** via `@xenova/transformers` (no API key, runs in-process — genuinely free, no rate limits, no signup), **Clerk** (auth), MongoDB Atlas + Turso + Qdrant (data layer), Next.js + Express (app).
 
+**Status: steps 1–9 below are done** — all real accounts provisioned, `.env` populated, frontend scaffolded, backend deps installed, Turso migration pushed, and all three databases verified against the real cloud services (see [TESTING.md](./TESTING.md)). What's actually left is step 10 — Clerk middleware isn't wired in yet, and the routes don't use the DB clients yet even though the clients themselves work. This doc is kept as the setup reference for anyone new joining the repo, not just a forward-looking plan.
+
 ## 0. Prerequisites
 - Node.js 20+
 - A [Clerk](https://clerk.com) account (free tier) — create an application, grab the publishable + secret keys
@@ -49,20 +51,27 @@ cp .env.example .env
 ```
 See [`.env.example`](./.env.example) for the full list — nothing is needed for embeddings since that model runs locally.
 
-## 5. Qdrant (local dev, free)
+## 5. MongoDB Atlas
+Create a dedicated project + M0 cluster + scoped database user (see the earlier conversation for the full walkthrough: dedicated Atlas project, `readWrite` scoped to just the `twinfolio` database, not a broad built-in role). Two real gotchas hit and fixed while setting this up — both silent, not obvious from the error alone:
+- If the generated password contains a reserved URI character (`@`, `:`, `/`, `%`, `#`, etc.), it must be percent-encoded in the connection string — an unencoded `%` in particular produces a confusing `URI malformed` parse error rather than an obviously-about-encoding one.
+- The connection string Atlas gives you defaults to no database name (`.../?retryWrites=...`), which silently connects to a database literally named `test` instead of `twinfolio` — add `/twinfolio` right after the host, before the `?`. Symptom if you miss this: a permissions error mentioning `test.<collection>` even though your user was scoped correctly to `twinfolio`.
+
+## 6. Qdrant
 ```bash
 docker run -p 6333:6333 qdrant/qdrant
 ```
-Use Qdrant Cloud instead for anything beyond local dev — same client, just swap `QDRANT_URL`/`QDRANT_API_KEY`.
+In practice we used an existing Qdrant Cloud cluster with a dedicated collection (`twinfolio_conversations`) rather than local Docker — same client either way, just point `QDRANT_URL`/`QDRANT_API_KEY` at whichever you use. Two real gotchas hit and fixed during setup, worth knowing if you hit them too:
+- `QDRANT_URL` must be the actual HTTPS cluster URL from the Qdrant Cloud dashboard, not the `localhost:6333` default in `.env.example` — using the default with a real cloud API key produces a confusing `ECONNREFUSED` rather than an obvious "wrong URL" error.
+- Qdrant Cloud requires an explicit payload index before you can filter-search by a field (e.g. `userId`) — `backend/src/db/qdrant.js`'s `ensureCollectionExists()` creates this automatically now, but only on first collection creation.
 
-## 6. Turso — create the database
+## 7. Turso — create the database
 ```bash
 turso db create twinfolio-db
 turso db show twinfolio-db --url          # → TURSO_DATABASE_URL
 turso db tokens create twinfolio-db       # → TURSO_AUTH_TOKEN
 ```
 
-## 7. Drizzle — schema & migrations (Turso)
+## 8. Drizzle — schema & migrations (Turso)
 ```bash
 cd backend
 npx drizzle-kit generate
@@ -70,7 +79,7 @@ npx drizzle-kit push
 cd ..
 ```
 
-## 8. Run it
+## 9. Run it
 ```bash
 # terminal 1
 cd frontend && npm run dev
@@ -79,7 +88,10 @@ cd frontend && npm run dev
 cd backend && npm run dev
 ```
 
-## 9. First things to wire up
-- Clerk middleware in Express (`@clerk/express`) to protect API routes, and `<ClerkProvider>` in the Next.js app
-- A `scripts/create-qdrant-collection.js` one-off script — vector size must match `@xenova/transformers`' chosen model output (e.g. `Xenova/all-MiniLM-L6-v2` → 384 dimensions)
-- The LangChain.js agent (`@langchain/groq` ChatGroq model) with its tools: `runSimulation`, `getRiskProfile`, `getBiasFlags`, `checkMicroMoment`, `escalateToRM` (see [ARCHITECTURE.md](./ARCHITECTURE.md))
+## 10. What's actually left (as of this writing)
+- **Clerk middleware** in Express (`@clerk/express`) to protect API routes, and `<ClerkProvider>` + sign-in UI in the Next.js app — not started.
+- **Wire the already-built, already-verified DB clients into the live routes**: `/api/chat` and `/api/risk-profile` currently take a manually-passed `profile`/`preset` in the request body and persist nothing. They should instead read/write via `backend/src/db/turso.js` (profile), log to MongoDB (`ConversationLog`, `RiskAssessment`), and call `backend/src/db/qdrant.js`'s `upsertConversationEmbedding`/`searchRelevantContext` so the agent actually gets RAG context — right now Qdrant search works standalone but nothing calls it from a real conversation.
+- A new `/api/profile` route (Turso-backed) — not started.
+- The agent's tool set only has `runWhatIfSimulation` and `calculateRequiredContribution` today — `getRiskProfile`, `checkMicroMoment`, `escalateToRM` from the original architecture are designed but not implemented as callable tools.
+
+See [FEATURES.md](./FEATURES.md) for the full ✅/⚠️/🚧 status per feature.

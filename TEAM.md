@@ -50,6 +50,16 @@
 | Aniket | Bug fixes, auth/security hardening, regression testing |
 | Ronik | Voice interface (stretch, if time permits), analytics dashboard, full demo rehearsal, pitch deck + video |
 
+## Progress vs. plan
+
+What's actually built so far spans across the planned sprints, not cleanly within one — see [TESTING.md](./TESTING.md) for verification detail:
+
+- **Sprint 1 scope** (scaffolding, data model) — done: Express + Next.js scaffolds, Turso/Mongo/Qdrant schemas and clients all exist and are verified against the real services.
+- **Sprint 2 scope** (core logic v1) — done: simulation engine wired into Express, goal dashboard UI, agentic conversation layer v1, risk model v1 — all verified with real API calls, not just written.
+- **Sprint 3 scope** (real data + integration) — partially done: the risk model already runs (Sprint 3 called for "tuned on real data," but there's no real sandbox data yet, so it currently runs on synthetic presets instead). Not yet done: RM dashboard, wiring auth/persistence into the live routes, micro-moment trigger engine.
+
+Net effect: simulation + chat + risk-model logic is ahead of the original sprint boundary, while persistence/auth wiring and the RM dashboard are behind it. Whoever picks up Yuvraj's or Aniket's lane next should start with wiring Clerk + the already-built DB clients into the existing routes, not with Sprint 1-style scaffolding — that part's done.
+
 ## Risks in this composition
 
 - **No dedicated frontend/avatar specialist besides Ronik.** Frontend is the tightest bandwidth constraint on the team. If Ronik gets pulled into demo/pitch-deck work late in the timeline, frontend polish is what slips first — plan buffer time in Sprint 4 accordingly, and let Aniket absorb simple UI tasks if backend/auth work finishes ahead of schedule.

@@ -17,16 +17,14 @@ Twinfolio is a single Next.js + Express application (no separate ML microservice
 - Event stream detecting salary credits, large transactions, and surplus cash — feeds the micro-moment trigger engine
 
 ### Core
-- **Monte Carlo simulation engine** — plain JS, no library needed; forward-projects net worth under different contribution/spending scenarios
-- **Revealed-preference risk model** — not a trained classifier; Groq/LLM structured-output reasoning (via LangChain.js) directly over transaction/portfolio-event history (volatility-period behavior, concentration ratios, scheme-chasing patterns), returning a schema-constrained `{riskTolerance, biasFlags[], reasoning}` object rather than free text — avoids needing fabricated labeled training data, and folds the explainability layer into the same call
-- **Bias-coaching rules engine** — maps detected bias patterns to coaching scripts and counterfactual return calculations
-- **Agentic conversation layer (LangChain.js)** — not a plain RAG chatbot. The avatar is a tool-calling agent that retrieves the customer's own context (RAG over Qdrant embeddings) and decides which tool to invoke based on the question:
-  - `runSimulation()` → Monte Carlo engine
-  - `getRiskProfile()` → revealed-preference risk model
-  - `getBiasFlags()` → bias-coaching engine
-  - `checkMicroMoment()` → trigger engine status
-  - `escalateToRM()` → human-in-the-loop handoff
-  It then synthesizes the tool output into an explainable, natural-language avatar response.
+- **Monte Carlo simulation engine** ✅ built & live — plain JS, no library needed; forward-projects net worth under different contribution/spending scenarios (`backend/src/services/simulationEngine.js`, wired into `/api/simulate` and the agent's `runWhatIfSimulation` tool)
+- **Revealed-preference risk model** ✅ built & live — not a trained classifier; Groq/LLM structured-output reasoning (via LangChain.js) directly over transaction/portfolio-event history, returning a schema-constrained `{riskTolerance, biasFlags[], reasoning}` object rather than free text (`backend/src/agent/riskProfileModel.js`, wired into `/api/risk-profile`). Currently runs on synthetic presets, not real bank data — real assessments aren't yet persisted anywhere (MongoDB model exists, not yet called from this route).
+- **Bias-coaching rules engine** — folded into the risk model above rather than built as a separate component; the risk model's `biasFlags[].explanation` field *is* the coaching output.
+- **Agentic conversation layer (LangChain.js)** ✅ built & live, ⚠️ RAG not yet connected. The avatar is a tool-calling agent (`backend/src/agent/financialTwinAgent.js`) with two real tools today:
+  - `runWhatIfSimulation()` → Monte Carlo engine — **verified**: returns real computed values, not hallucinated ones (cross-checked against direct API calls)
+  - `calculateRequiredContribution()` → goal back-calculation — **verified** the same way
+  - `getRiskProfile()`, `checkMicroMoment()`, `escalateToRM()` — designed, not yet implemented as agent tools
+  - RAG over Qdrant embeddings is built and verified **standalone** (`backend/src/db/qdrant.js`) but not yet called from the agent — right now the agent has no memory of past conversations.
 
 ### Interface
 - Avatar (2D, Lottie — voice/text reactive)
@@ -52,9 +50,11 @@ The official problem statement asks for an app "integrated into the bank's mobil
 
 ## Data model notes
 
-- **MongoDB Atlas** holds naturally document-shaped, high-write data: conversation logs, nudge history, simulation snapshots.
-- **Turso** (libSQL/SQL) holds data that benefits from relational integrity: accounts, goals, audit trail.
-- **Qdrant** holds vector embeddings of the customer's own financial context (transaction summaries, goal descriptions, past conversation turns) for the agent's RAG retrieval step. Requires an embedding provider (Voyage AI or OpenAI — chosen to match whichever LLM provider is used, since neither Claude nor Groq serve embeddings directly) to actually generate the vectors before they're stored.
+All three below are built and verified against the real cloud services (see TESTING.md) — real insert/read/delete or real semantic search, each confirmed working. **None are wired into the live routes yet** — `/api/chat` and `/api/risk-profile` currently run entirely stateless, no login, nothing persists between requests.
+
+- **MongoDB Atlas** — `ConversationLog` and `RiskAssessment` models exist (`backend/src/db/models/`) for conversation logs, nudge history, simulation snapshots.
+- **Turso** (libSQL/SQL) — `profiles` table (schema + migration pushed) for accounts/goals/audit-trail-shaped data that benefits from relational integrity.
+- **Qdrant** — collection + payload index set up, embeddings generated locally via `@xenova/transformers` (`Xenova/all-MiniLM-L6-v2`, 384 dimensions) — no external embeddings API needed, resolving the earlier open question about which embeddings provider to pair with Claude/Groq. Real semantic search confirmed working with cross-user isolation verified (a filter on `userId`, backed by a payload index Qdrant Cloud requires explicitly).
 
 ## Why one JS stack
 

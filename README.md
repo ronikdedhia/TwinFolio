@@ -44,21 +44,23 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full system design.
 
 ```
 twinfolio/
-├── README.md
-├── ARCHITECTURE.md
-├── FEATURES.md
-├── BRAINSTORM.md
-├── TEAM.md
-├── SETUP.md
+├── README.md, ARCHITECTURE.md, FEATURES.md, BRAINSTORM.md, TEAM.md
+├── SETUP.md, TESTING.md, ELI5.md
 ├── .env.example
-├── assets/              # diagrams referenced in the docs
-├── frontend/            # Next.js app
-└── backend/              # Express API + agent orchestration layer
-    ├── package.json
+├── assets/                          # diagrams referenced in the docs
+├── frontend/                        # Next.js app (scaffolded, goal dashboard live)
+│   └── src/app/                     # page.tsx (dashboard), icon.svg
+└── backend/
+    ├── package.json, drizzle.config.js
+    ├── drizzle/                     # generated migrations
     └── src/
+        ├── env.js                   # dotenv, loaded first — see the file's own comment
+        ├── index.js
+        ├── routes/                  # simulate.js, chat.js, riskProfile.js
+        ├── services/                # simulationEngine.js, syntheticBehavior.js, embeddings.js
+        ├── agent/                   # financialTwinAgent.js, tools.js, riskProfileModel.js
+        └── db/                      # turso.js, schema.js, mongo.js, qdrant.js, models/
 ```
-
-*(scaffolding to be filled in as the build progresses)*
 
 ## Team
 
@@ -66,4 +68,17 @@ twinfolio/
 
 ## Status
 
-Concept/idea-deck stage — prototype build begins if shortlisted (IDBI Innovate 2026 calendar: shortlist announced Aug 1, prototype phase Aug 2–16).
+Actively building. See [TESTING.md](./TESTING.md) for the full verification log with real API results. Current state:
+
+**✅ Built and verified end-to-end:**
+- Monte Carlo simulation + goal back-calculation (`/api/simulate`)
+- Goal dashboard (Next.js + Recharts fan chart)
+- Agentic chat (`/api/chat`) — LangChain.js + Groq, confirmed genuinely tool-calling (not hallucinating numbers)
+- Risk/bias model (`/api/risk-profile`) — Groq structured output, verified across 4 behavioral presets
+- Data layer standalone: Turso (profiles schema + migration), MongoDB (conversation/risk-assessment models), Qdrant (collection + real semantic search, cross-user isolation confirmed)
+
+**🚧 In progress:** wiring auth (Clerk) + the data layer into the actual routes — right now `/api/chat` and `/api/risk-profile` are still stateless (no login, nothing persists, no real RAG retrieval happening in a live conversation yet, even though Qdrant search works standalone).
+
+**⬜ Not started:** micro-moment trigger engine, RM dashboard, polish/demo prep.
+
+IDBI Innovate 2026 calendar for reference: shortlist announced Aug 1, prototype-evaluation phase Aug 2–16.
