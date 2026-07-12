@@ -18,7 +18,7 @@ Twinfolio is a single Next.js + Express application (no separate ML microservice
 
 ### Core
 - **Monte Carlo simulation engine** — plain JS, no library needed; forward-projects net worth under different contribution/spending scenarios
-- **Revealed-preference risk model** — `ml.js` random forest/logistic regression trained on transaction/portfolio-event history (volatility-period behavior, concentration ratios, scheme-chasing patterns)
+- **Revealed-preference risk model** — not a trained classifier; Groq/LLM structured-output reasoning (via LangChain.js) directly over transaction/portfolio-event history (volatility-period behavior, concentration ratios, scheme-chasing patterns), returning a schema-constrained `{riskTolerance, biasFlags[], reasoning}` object rather than free text — avoids needing fabricated labeled training data, and folds the explainability layer into the same call
 - **Bias-coaching rules engine** — maps detected bias patterns to coaching scripts and counterfactual return calculations
 - **Agentic conversation layer (LangChain.js)** — not a plain RAG chatbot. The avatar is a tool-calling agent that retrieves the customer's own context (RAG over Qdrant embeddings) and decides which tool to invoke based on the question:
   - `runSimulation()` → Monte Carlo engine
@@ -44,8 +44,6 @@ A micro-moment trigger (salary/surplus/bonus) or a direct customer question both
 
 ## Mobile integration strategy
 
-![Mobile integration diagram](./assets/mobile-integration.png)
-
 The official problem statement asks for an app "integrated into the bank's mobile application." Next.js is a web framework, so this is resolved by shipping **one codebase to three surfaces**:
 
 1. **Bank's native mobile app** — the Next.js app embedded via in-app WebView / deep link. This is what satisfies the "integrated into the mobile app" requirement without a separate native rebuild.
@@ -60,10 +58,11 @@ The official problem statement asks for an app "integrated into the bank's mobil
 
 ## Why one JS stack
 
-Three pieces originally looked like they needed Python:
+Pieces that originally looked like they needed Python, or a separate ML library, don't:
 
 - **Monte Carlo simulation** — not actually ML, just numerical simulation. Plain JS loops/random sampling handle this natively.
-- **Revealed-preference risk/bias model** — genuine ML, but at hackathon/demo scale, `ml.js` (random forest, logistic regression) is sufficient. Trade-off: less mature tooling than scikit-learn/XGBoost (no SHAP-equivalent explainability library, smaller community) — acceptable for a prototype proving the concept, worth revisiting if this becomes a production system on real bank-scale data.
-- **Agentic/RAG orchestration** — LangChain.js (the JS/TS port of LangChain) covers tool-calling agents and RAG retrieval natively, so this doesn't need Python either.
+- **Revealed-preference risk/bias model** — no trained classifier at all. Groq (via LangChain.js structured output) reasons directly over behavioral history and returns a schema-constrained result. Trade-off: less deterministic run-to-run than a trained classifier — mitigated with near-zero temperature, a constrained output schema, and full prompt/response audit logging. Worth revisiting only if this becomes a production system needing formally validated/backtested risk scoring.
+- **Agentic/RAG orchestration** — LangChain.js (the JS/TS port of LangChain) covers tool-calling agents and RAG retrieval natively.
+- **Embeddings** — `@xenova/transformers` runs the embedding model locally in-process, no Python and no external API needed either.
 
 Collapsing to one language removes the cross-service REST call, simplifies deployment to a single target, and matches a 4-person team's ability to context-switch across the whole stack.

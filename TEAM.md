@@ -12,7 +12,7 @@
 ## Role mapping
 
 - **Yuvraj — Backend/Platform lead.** Owns overall system design, the Express service architecture, the MongoDB Atlas + Turso + Qdrant data-layer split, the simulation-engine service, deployment/infra, and CI/CD. System-design ownership sits with Yuvraj alone (not split with Harish) since Harish's specialty is AI, not backend architecture — avoids overlap.
-- **Harish — AI/Conversational lead.** Owns the agentic conversation layer (LangChain.js) — the RAG retrieval setup over Qdrant, the tool-calling logic wiring the agent into the simulation/risk/bias engines, LLM integration and prompt design, the revealed-preference risk/bias model (`ml.js`), and the micro-moment trigger logic.
+- **Harish — AI/Conversational lead.** Owns the agentic conversation layer (LangChain.js) — the RAG retrieval setup over Qdrant, the tool-calling logic wiring the agent into the simulation/risk/bias engines, LLM integration and prompt design, the revealed-preference risk/bias model (Groq/LLM structured-output reasoning, not a trained classifier), and the micro-moment trigger logic.
 - **Aniket — Backend/Auth support.** Owns SSO/MFA, the Account Aggregator consent lifecycle, audit-trail logging, and suitability/compliance data plumbing. Works under Yuvraj's system design rather than owning architecture decisions solo, given the seniority gap — pairs with Yuvraj on anything system-design-heavy.
 - **Ronik — Frontend/Product/All-rounder.** Owns the Next.js app, Lottie avatar integration, goal dashboard + scenario sandbox UI, RM dashboard UI, demo narrative, and the pitch deck. Floats to unblock whichever lane is behind, since there's no dedicated frontend specialist besides Ronik — this is the team's tightest bandwidth constraint (see Risks below).
 
@@ -30,7 +30,7 @@
 | Member | Focus |
 |---|---|
 | Yuvraj | Monte Carlo simulation engine (plain JS) wired into Express, API contracts for frontend |
-| Harish | Revealed-preference risk model v1 (`ml.js`) on synthetic data, RAG conversation layer v1 |
+| Harish | Revealed-preference risk model v1 (Groq/LLM structured-output reasoning) on synthetic data, agentic conversation layer v1 |
 | Aniket | Consent management service completed, audit logging v1, backend test coverage |
 | Ronik | Goal dashboard + scenario sandbox UI, avatar conversation UI wired to backend |
 

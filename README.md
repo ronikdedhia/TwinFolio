@@ -36,7 +36,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full system design.
 | Frontend | Next.js (React), Lottie (avatar) |
 | Conversational | LLM + RAG + agentic tool-calling (LangChain.js) |
 | Backend | Express (Node.js) — single service, app/API + ML + agent orchestration layer |
-| ML | Plain JS for Monte Carlo simulation; `ml.js` (random forest/logistic regression) for the revealed-preference risk/bias model |
+| ML | Plain JS for Monte Carlo simulation; Groq/LLM structured-output reasoning (via LangChain.js) for the revealed-preference risk/bias model — no trained classifier |
 | Data | MongoDB Atlas (conversation logs, nudge history, simulation snapshots) + Turso (SQL: accounts, goals, audit trail) + Qdrant (vector store for RAG embeddings) |
 | Infra | Vercel (frontend), Render/Railway (Express service), MongoDB Atlas managed cluster, GitHub Actions (CI/CD) |
 
@@ -46,11 +46,16 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full system design.
 twinfolio/
 ├── README.md
 ├── ARCHITECTURE.md
+├── FEATURES.md
+├── BRAINSTORM.md
+├── TEAM.md
+├── SETUP.md
+├── .env.example
 ├── assets/              # diagrams referenced in the docs
-├── apps/
-│   └── web/             # Next.js frontend
-├── server/               # Express API + ML layer
-└── docs/                 # additional design notes
+├── frontend/            # Next.js app
+└── backend/              # Express API + agent orchestration layer
+    ├── package.json
+    └── src/
 ```
 
 *(scaffolding to be filled in as the build progresses)*

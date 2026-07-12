@@ -167,10 +167,10 @@ Cross-cutting: SSO/MFA auth, SEBI-suitability compliance layer, immutable audit 
 | Conversational engine | LLM + RAG + agentic tool-calling (LangChain.js) — agent retrieves customer context via RAG (Qdrant) and calls tools (simulation engine, risk model, bias engine, trigger engine) rather than just generating text |
 | Backend / API | Express (Node.js) — single service, app/API + ML + agent orchestration layer |
 | Simulation engine | Plain JS — Monte Carlo, no library needed |
-| Modeling | `ml.js` (revealed-preference/bias model — random forest/logistic regression) |
-| Storage | MongoDB Atlas (conversation logs, nudge history, simulation snapshots) + Turso (SQL: accounts, goals, audit trail) + Qdrant (vector store for RAG embeddings) |
+| Modeling | Groq/LLM structured-output reasoning (revealed-preference/bias model — not a trained classifier) |
+| Storage | MongoDB Atlas (conversation logs, nudge history, simulation snapshots) + Turso (SQL: accounts, goals, audit trail) + Qdrant (vector store for RAG embeddings, embedded locally via `@xenova/transformers`) |
 | Infra | Vercel (frontend), Render/Railway (Express service), MongoDB Atlas managed cluster, GitHub Actions (CI/CD) |
-| Auth | Stand-in JWT/NextAuth.js credential login for the demo (real bank OIDC/SSO not reachable in the hackathon sandbox) |
+| Auth | Clerk (real bank OIDC/SSO not reachable in the hackathon sandbox) |
 | Observability | Prometheus + Grafana, OpenTelemetry |
 
 ### Mobile integration

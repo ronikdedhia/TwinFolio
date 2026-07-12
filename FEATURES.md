@@ -13,7 +13,7 @@ Everything below is in scope for the 4-person / 8-week build (IDBI Innovate 2026
 ## 2. Simulation & Modeling Engine
 - Monte Carlo–based financial projection engine (plain JS), parameterized per customer
 - Goal modeling module (retirement, home purchase, education) with required-contribution back-calculation
-- Revealed-preference risk & bias model (`ml.js`) trained on transaction/portfolio-event history
+- Revealed-preference risk & bias model — Groq/LLM structured-output reasoning (LangChain.js) over transaction/portfolio-event history, not a trained classifier
 - Bias-coaching rules engine mapping detected patterns to coaching scripts and counterfactual return calculations
 - Micro-moment trigger engine (rule + ML hybrid) generating prioritized nudge candidates
 - Agentic conversation layer (LangChain.js) with tool-calling into the simulation engine, risk model, bias engine, and micro-moment engine — not just RAG retrieval+generation
