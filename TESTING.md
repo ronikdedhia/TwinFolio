@@ -84,6 +84,11 @@ Expected:
 
 Sanity cross-check against `/api/simulate`: contributing *less* than this required amount should produce a `probabilityOfReachingGoal` below 50% — verified true for the ₹5,000/month example above (18.4%).
 
+**Bugs found and fixed during validation** (caught before push, not after):
+- `annualReturnMean: 0` caused a division-by-zero → silently returned `null` instead of the correct answer. Fixed: 0%-return case now computed directly (`remaining / n`, no compounding to solve for). Verified: `{"currentSavings":100000,"goalAmount":1500000,"years":10,"annualReturnMean":0}` → `11666.67` (checks out: `(1,500,000 - 100,000) / 120 months`).
+- Non-numeric input (e.g. `"currentSavings":"abc"`) silently produced a `200` response full of `null`s (NaN → `null` via `JSON.stringify`) instead of an error. Fixed: both simulation functions now reject non-finite-number inputs with a clear `400`.
+- `POST /api/chat` accepted an array as `profile` (`typeof [] === "object"`) and an incomplete profile object, both of which would've reached the agent with `undefined` fields. Fixed: rejects arrays explicitly and validates all four required profile fields are finite numbers before running the agent.
+
 ---
 
 ## ✅ Goal dashboard (frontend)
@@ -101,6 +106,55 @@ curl -s http://localhost:3000 | grep -o "Goal Dashboard"
 
 ---
 
-## 🚧 In progress
+## ✅ Agentic conversation layer
 
-- **Agentic conversation layer** (`POST /api/chat`) — LangChain.js + Groq agent, tool-calling into the simulation engine above. Not yet tested — will be added here once verified.
+`POST /api/chat` — LangChain.js + Groq agent with tool-calling into `/api/simulate`'s underlying engine.
+
+```bash
+curl -s -X POST http://localhost:4000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "what if I invest 8000 a month instead?",
+    "profile": {"currentSavings": 100000, "monthlyContribution": 5000, "years": 10, "goalAmount": 1500000}
+  }'
+```
+
+**Verified with a real Groq key:**
+- Plain conversational message → sensible reply, no tool call forced unnecessarily.
+- "What if I invest 8000 a month instead?" → correctly calls `runWhatIfSimulation` with the override and reports a realistic median/range, explained correctly.
+- "How much do I actually need to save monthly to hit my goal?" → correctly calls `calculateRequiredContribution`, returning **₹6001.10** — this exactly matches the ground-truth value independently verified against `/api/simulate/required-contribution` directly, confirming the agent is genuinely invoking the tool and relaying its real output, not hallucinating a plausible-sounding number.
+- Input validation (`400` for missing `message`, missing/malformed `profile`, array-as-profile, incomplete profile fields) still holds.
+
+**Real bug caught and fixed during this verification pass:** `.env` lives at the repo root, but `dotenv.config()` with no path resolves relative to `process.cwd()` — when run via `cd backend && npm run dev` (as documented in `SETUP.md`), it was looking for `backend/.env`, which doesn't exist. The backend would have silently never seen any of the real keys. Fixed in `backend/src/index.js` by resolving the `.env` path relative to the module's own location instead of the cwd.
+
+Model used: `llama-3.3-70b-versatile` — confirmed working against the real Groq API as of this test.
+
+---
+
+## ✅ Revealed-preference risk/bias model
+
+`POST /api/risk-profile` — Groq structured-output reasoning (not a trained classifier) over a customer's behavioral event history. Accepts either a custom `events` array or a synthetic `preset` for dev/demo: `panic-seller`, `fd-heavy-conservative`, `disciplined-investor`, `scheme-chaser`.
+
+```bash
+curl -s -X POST http://localhost:4000/api/risk-profile \
+  -H "Content-Type: application/json" \
+  -d '{"preset": "panic-seller"}'
+```
+
+**Verified against all four presets with a real Groq key:**
+- `panic-seller` → `conservative`, flags `loss-aversion` (sold 80% of equity during the drawdown) + `fd-overconcentration` (60% in FDs) — correct.
+- `fd-heavy-conservative` → `conservative`, flags `fd-overconcentration` (90% in FDs, correctly identified as genuine FD concentration) — correct.
+- `disciplined-investor` → `moderate`, **zero bias flags** — confirms the model doesn't hallucinate problems on clean input, not just that it can find them on bad input.
+- `scheme-chaser` → `aggressive`, flags specific to the evidence (impulsive small-cap investment, chasing trends) — see bug note below.
+
+**Real bug caught and fixed during this verification pass:** the first pass on `scheme-chaser` mislabeled a bias as `"fd-overconcentration"` for evidence about small-cap *mutual funds* — there were no FDs anywhere in that scenario. The model was reusing the schema description's example label strings verbatim instead of generating a label that matched the actual evidence. Same pass also produced generic advice-column language ("diversify your portfolio," "avoid impulsive decisions") instead of evidence-grounded coaching, inconsistent with the other three presets' tone. Fixed by rewriting the schema's `type` and `explanation` field descriptions to explicitly forbid reusing example labels/generic advice that don't match the specific evidence, and reinforcing this in the main prompt. Re-tested after the fix: `scheme-chaser` now returns accurate, evidence-specific labels and grounded explanations, and `fd-heavy-conservative` was re-checked to confirm no regression.
+
+Remaining minor observation, not fixed: `fd-heavy-conservative`'s `loss-aversion` label (for *not* selling during a drawdown) is a slightly different behavior pattern than `panic-seller`'s `loss-aversion` label (for actively selling during a drawdown) — both get the same tag despite being close to opposite actions. Defensible either way, but worth tightening further if precise bias taxonomy matters more than it currently does for the demo.
+
+---
+
+## 🚧 Not yet built
+
+- Micro-moment trigger engine (salary/surplus/bonus detection → proactive nudges)
+- RM dashboard + suitability/compliance console
+- Auth (Clerk), MongoDB Atlas, Turso, Qdrant — none of the data-layer/auth pieces are wired in yet; everything above runs with no persistence and no login

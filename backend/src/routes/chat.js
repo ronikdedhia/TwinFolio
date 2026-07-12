@@ -10,8 +10,14 @@ router.post("/chat", async (req, res) => {
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "message (string) is required" });
   }
-  if (!profile || typeof profile !== "object") {
+  if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
     return res.status(400).json({ error: "profile object is required" });
+  }
+  const requiredProfileFields = ["currentSavings", "monthlyContribution", "years", "goalAmount"];
+  for (const field of requiredProfileFields) {
+    if (typeof profile[field] !== "number" || !Number.isFinite(profile[field])) {
+      return res.status(400).json({ error: `profile.${field} must be a finite number` });
+    }
   }
 
   try {

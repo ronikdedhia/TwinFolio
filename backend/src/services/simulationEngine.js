@@ -13,6 +13,12 @@ function percentile(sortedArr, p) {
   return sortedArr[idx];
 }
 
+function assertFiniteNumber(value, name) {
+  if (value !== undefined && (typeof value !== "number" || !Number.isFinite(value))) {
+    throw new Error(`${name} must be a finite number, got: ${JSON.stringify(value)}`);
+  }
+}
+
 /**
  * Projects a customer's net worth forward under random return paths.
  * Returns a year-by-year p10/median/p90 "fan chart" and, if a goalAmount
@@ -27,6 +33,13 @@ export function runMonteCarloSimulation({
   goalAmount = null,
   simulations = 2000,
 } = {}) {
+  assertFiniteNumber(currentSavings, "currentSavings");
+  assertFiniteNumber(monthlyContribution, "monthlyContribution");
+  assertFiniteNumber(annualReturnMean, "annualReturnMean");
+  assertFiniteNumber(annualReturnStdDev, "annualReturnStdDev");
+  assertFiniteNumber(years, "years");
+  assertFiniteNumber(goalAmount ?? undefined, "goalAmount");
+  assertFiniteNumber(simulations, "simulations");
   if (years < 1) throw new Error("years must be at least 1");
   if (simulations < 1) throw new Error("simulations must be at least 1");
 
@@ -85,6 +98,10 @@ export function requiredMonthlyContribution({
   years,
   annualReturnMean = 0.1,
 } = {}) {
+  assertFiniteNumber(currentSavings, "currentSavings");
+  assertFiniteNumber(goalAmount, "goalAmount");
+  assertFiniteNumber(years, "years");
+  assertFiniteNumber(annualReturnMean, "annualReturnMean");
   if (!goalAmount || goalAmount <= 0) throw new Error("goalAmount must be a positive number");
   if (!years || years < 1) throw new Error("years must be at least 1");
 
@@ -94,6 +111,12 @@ export function requiredMonthlyContribution({
   const remaining = goalAmount - fvOfCurrentSavings;
 
   if (remaining <= 0) return 0;
+
+  // Future value of an annuity divides by monthlyRate — undefined at rate 0,
+  // where the correct answer is simply remaining / n (no compounding to solve for).
+  if (monthlyRate === 0) {
+    return remaining / n;
+  }
 
   const annuityFactor = (Math.pow(1 + monthlyRate, n) - 1) / monthlyRate;
   return remaining / annuityFactor;
