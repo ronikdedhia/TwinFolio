@@ -7,6 +7,7 @@ Twinfolio is a single Next.js + Express application (no separate ML microservice
 ![Architecture diagram](./assets/architecture.png)
 
 ### Sources
+
 - Bank mobile-app data (transactions, existing holdings — MF, FD, insurance)
 - Account Aggregator (consent-based pull of externally-held investments)
 - Market data feed (NAV / index levels / FD rate cards)
