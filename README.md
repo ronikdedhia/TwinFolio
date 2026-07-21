@@ -2,6 +2,8 @@
 
 **A financial digital twin — an avatar that simulates your financial future, not a chatbot with a face on top of it.**
 
+🔴 **[Live demo](https://twin-folio.vercel.app/)**
+
 A wealth-advisory / conversational-AI / customer-facing fintech project — built to be demoed live, not just pitched as a slide.
 
 ## Problem it solves
