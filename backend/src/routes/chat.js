@@ -1,29 +1,23 @@
 import { Router } from "express";
-import { runFinancialTwinAgent } from "../agent/financialTwinAgent.js";
+import { handleChatTurn, NoProfileError } from "../services/chatService.js";
 
 const router = Router();
 
-// POST /api/chat — talk to the financial twin
+// POST /api/chat — talk to the financial twin (requires auth; see middleware/auth.js)
 router.post("/chat", async (req, res) => {
-  const { message, profile } = req.body;
+  const { message } = req.body;
 
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "message (string) is required" });
   }
-  if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
-    return res.status(400).json({ error: "profile object is required" });
-  }
-  const requiredProfileFields = ["currentSavings", "monthlyContribution", "years", "goalAmount"];
-  for (const field of requiredProfileFields) {
-    if (typeof profile[field] !== "number" || !Number.isFinite(profile[field])) {
-      return res.status(400).json({ error: `profile.${field} must be a finite number` });
-    }
-  }
 
   try {
-    const reply = await runFinancialTwinAgent({ message, profile });
+    const reply = await handleChatTurn({ userId: req.userId, message });
     res.json({ reply });
   } catch (err) {
+    if (err instanceof NoProfileError) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 });

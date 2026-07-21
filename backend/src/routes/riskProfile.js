@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { assessRiskProfile } from "../agent/riskProfileModel.js";
 import { getSyntheticBehaviorEvents, listPresetNames } from "../services/syntheticBehavior.js";
+import { connectMongo } from "../db/mongo.js";
+import { RiskAssessment } from "../db/models/RiskAssessment.js";
 
 const router = Router();
 
@@ -28,6 +30,10 @@ router.post("/risk-profile", async (req, res) => {
 
   try {
     const assessment = await assessRiskProfile(eventsToAnalyze);
+
+    await connectMongo();
+    await RiskAssessment.create({ userId: req.userId, ...assessment });
+
     res.json(assessment);
   } catch (err) {
     // GROQ_API_KEY missing, model call failure, etc. — a server-side problem, not a bad request

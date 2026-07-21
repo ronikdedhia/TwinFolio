@@ -2,7 +2,7 @@
 
 **A financial digital twin — an avatar that simulates your financial future, not a chatbot with a face on top of it.**
 
-Built for **IDBI Innovate 2026**, Track 01 — Wealth Advisory (Wealth Advisory / Conversational AI / Mobile Banking).
+A wealth-advisory / conversational-AI / customer-facing fintech project — built to be demoed live, not just pitched as a slide.
 
 ## Problem it solves
 
@@ -21,11 +21,13 @@ Most "avatar-based advisor" products stop at a conversational UI layer bolted on
 
 - Monte Carlo–based financial projection engine with goal modeling (retirement, home purchase, education)
 - Revealed-preference risk & bias model trained on transaction/portfolio-event history
-- Micro-moment trigger engine (salary/surplus/bonus detection)
-- Agentic conversational layer (LangChain.js): retrieves the customer's own data (RAG) and decides which tool to call — simulation engine, risk model, bias engine, trigger engine — rather than just retrieving and generating text
-- 2D avatar (Lottie) with expression-reactive responses
-- RM dashboard + suitability/compliance console for SEBI investment-adviser norms
-- Hindi + regional-language support
+- Rule-based nudge engine — checks the customer's own numbers (surplus vs. required contribution, off-track probability) and surfaces it unprompted on the dashboard; not yet a push/event-triggered "salary just landed" system
+- Agentic conversational layer (LangChain.js): retrieves the customer's own data (RAG) and decides which tool to call — simulation engine, risk model, bias engine — rather than just retrieving and generating text
+- Customer login (Clerk) — profile, chat, risk profile, and nudges are all tied to the real signed-in user, not stateless demo calls
+- RM/staff dashboard — every customer's plan, latest risk read, and latest nudge in one table, gated by an admin allowlist
+- 2D avatar (Lottie) — dependency installed, no animation asset wired in yet
+- Hindi + regional-language support — not started
+- Suitability/compliance console for SEBI investment-adviser norms — not started
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full system design.
 
@@ -48,18 +50,22 @@ twinfolio/
 ├── SETUP.md, TESTING.md, ELI5.md
 ├── .env.example
 ├── assets/                          # diagrams referenced in the docs
-├── frontend/                        # Next.js app (scaffolded, goal dashboard live)
-│   └── src/app/                     # page.tsx (dashboard), icon.svg
+├── frontend/                        # Next.js app — dashboard, chat, staff view all live
+│   └── src/
+│       ├── app/                     # page.tsx (dashboard), staff/page.tsx, layout.tsx (ClerkProvider)
+│       ├── components/              # Nav.tsx, Chat.tsx, Nudges.tsx
+│       └── lib/                     # api.ts (authenticated fetch helper)
 └── backend/
     ├── package.json, drizzle.config.js
     ├── drizzle/                     # generated migrations
     └── src/
         ├── env.js                   # dotenv, loaded first — see the file's own comment
         ├── index.js
-        ├── routes/                  # simulate.js, chat.js, riskProfile.js
-        ├── services/                # simulationEngine.js, syntheticBehavior.js, embeddings.js
+        ├── middleware/              # auth.js (Clerk requireUser / requireAdmin)
+        ├── routes/                  # simulate.js, chat.js, riskProfile.js, profile.js, nudges.js, admin.js
+        ├── services/                # simulationEngine.js, syntheticBehavior.js, chatService.js, nudgeService.js
         ├── agent/                   # financialTwinAgent.js, tools.js, riskProfileModel.js
-        └── db/                      # turso.js, schema.js, mongo.js, qdrant.js, models/
+        └── db/                      # turso.js, schema.js, mongo.js, qdrant.js, models/ (incl. Nudge.js)
 ```
 
 ## Team
@@ -72,13 +78,15 @@ Actively building. See [TESTING.md](./TESTING.md) for the full verification log 
 
 **✅ Built and verified end-to-end:**
 - Monte Carlo simulation + goal back-calculation (`/api/simulate`)
-- Goal dashboard (Next.js + Recharts fan chart)
-- Agentic chat (`/api/chat`) — LangChain.js + Groq, confirmed genuinely tool-calling (not hallucinating numbers)
+- Login (Clerk) wired end-to-end — frontend sign-in, backend `requireUser`/`requireAdmin` gating on every customer-scoped route
+- Profile persistence (`/api/profile`) — dashboard, chat, and nudges all read/write the same stored customer profile
+- Goal dashboard (Next.js + Recharts fan chart), redesigned with a card layout, shared nav, and a sticky chat sidebar
+- Agentic chat (`/api/chat`) — LangChain.js + Groq, confirmed genuinely tool-calling (not hallucinating numbers), now with a real chat UI (message bubbles, auto-scroll)
 - Risk/bias model (`/api/risk-profile`) — Groq structured output, verified across 4 behavioral presets
-- Data layer standalone: Turso (profiles schema + migration), MongoDB (conversation/risk-assessment models), Qdrant (collection + real semantic search, cross-user isolation confirmed)
+- Nudge engine (`/api/nudges`) — rule-based, checks the customer's own numbers (surplus vs. required contribution, off-track probability, no contribution set) and surfaces it on the dashboard unprompted; logic hand-verified against real numbers
+- Staff/RM dashboard (`/api/admin/customers`, `/staff`) — every customer's plan, latest risk read, and latest nudge in one table, gated by an `ADMIN_USER_IDS` allowlist
+- Data layer: Turso (profiles schema + migration), MongoDB (conversation/risk-assessment/nudge models), Qdrant (collection + real semantic search, cross-user isolation confirmed)
 
-**🚧 In progress:** wiring auth (Clerk) + the data layer into the actual routes — right now `/api/chat` and `/api/risk-profile` are still stateless (no login, nothing persists, no real RAG retrieval happening in a live conversation yet, even though Qdrant search works standalone).
+**🚧 Not yet exercised live (code-correct, unverified in a real browser):** the actual Clerk sign-in click-through, a live chat round-trip through Groq, and the Qdrant/Mongo pipeline under a real authenticated session — build/typecheck/lint all pass, but a real end-to-end smoke test hasn't been run yet.
 
-**⬜ Not started:** micro-moment trigger engine, RM dashboard, polish/demo prep.
-
-IDBI Innovate 2026 calendar for reference: shortlist announced Aug 1, prototype-evaluation phase Aug 2–16.
+**⬜ Not started:** event-driven micro-moment triggers (nudges are currently checked when the dashboard loads, not pushed on a real salary-credit/bonus event), 2D Lottie avatar (dependency installed, no animation asset), Hindi/regional-language support, SEBI suitability/compliance console, automated test suite.
